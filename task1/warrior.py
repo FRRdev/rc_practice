@@ -106,8 +106,10 @@ class MyFieldManager:
     def __enter__(self):
         print(
             f'The battle between '
-            f'{self.first_warrior.__class__.__name__} '
-            f'and {self.second_warrior.__class__.__name__}\n'
+            f'{self.first_warrior.__class__.__name__}'
+            f'({self.first_warrior.health}hp) '
+            f'and {self.second_warrior.__class__.__name__}'
+            f'({self.second_warrior.health}hp)\n'
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
