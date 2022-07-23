@@ -1,6 +1,7 @@
-import inspect
-import sys
 import functools
+import inspect
+import types
+import sys
 
 
 def __check_health(func):
@@ -17,7 +18,7 @@ def __check_health(func):
             sys.exit()
         if health_left > current_warrior_object.max_health:
             current_warrior_object.health = current_warrior_object.max_health
-        print(f'{current_warrior_object_name} has {current_warrior_object.health} hp\n')
+        print(f'{current_warrior_object_name} has {int(current_warrior_object.health)} hp\n')
 
     return wrapper
 
@@ -45,7 +46,7 @@ def class_decorator(cls):
     for parent in cls.mro():
         for name, method in parent.__dict__.items():
             if not name.startswith('__') \
-                    and not isinstance(getattr(cls, name), property) \
+                    and isinstance(getattr(cls, name), types.FunctionType) \
                     and name not in __cached_methods:
                 __cached_methods[name] = method
                 setattr(cls, name, __check_health(__trace_info(method)))
@@ -53,6 +54,8 @@ def class_decorator(cls):
 
 
 class BaseWarrior:
+    _shield_cff = 1
+
     def __init__(self, health):
         self._max_health = health
         self._health = health
@@ -66,8 +69,8 @@ class BaseWarrior:
         return self._health
 
     def get_damaged(self):
-        self._health -= 10
-        return self._health
+        self.health -= (10 * self._shield_cff)
+        return self.health
 
     @property
     def max_health(self):
@@ -88,14 +91,28 @@ class Wizard(BaseWarrior):
         super().__init__(health)
 
     def get_damaged(self):
-        self.health -= 20
+        self.health -= (20 * self._shield_cff)
         return self.health
 
 
 @class_decorator
 class Paladin(BaseWarrior):
     def __init__(self, health=200):
+        self._use_shield = False
         super().__init__(health)
+
+    class UseShield:
+        def __get__(self, instance, owner):
+            if instance:
+                return instance._use_shield
+
+        def __set__(self, instance, value):
+            if not isinstance(value, bool):
+                raise TypeError("You can set only bool")
+            instance._shield_cff = 0.5 if value else 1
+            instance._use_shield = value
+
+    use_shield = UseShield()
 
 
 class MyFieldManager:
@@ -125,8 +142,14 @@ if __name__ == '__main__':
     with MyFieldManager(w, p) as field:
         w.get_damaged()
         w.eat_mushroom()
-        w.eat_mushroom()
-        w.eat_mushroom()
         p.get_damaged()
+        p.use_shield = True
         p.get_damaged()
         p.eat_apple()
+        w.eat_mushroom()
+        w.eat_mushroom()
+        w.get_damaged()
+        p.get_damaged()
+        p.use_shield = False
+        p.get_damaged()
+
