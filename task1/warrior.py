@@ -41,10 +41,13 @@ def class_decorator(cls):
     The main decorator for the class that
     adds a health check and information output
     """
+    __cached_methods = {}
     for parent in cls.mro():
         for name, method in parent.__dict__.items():
-            if not name.startswith('__') and \
-                    not isinstance(getattr(cls, name), property):
+            if not name.startswith('__') \
+                    and not isinstance(getattr(cls, name), property) \
+                    and name not in __cached_methods:
+                __cached_methods[name] = method
                 setattr(cls, name, __check_health(__trace_info(method)))
     return cls
 
@@ -121,6 +124,7 @@ if __name__ == '__main__':
     p = Paladin()
     with MyFieldManager(w, p) as field:
         w.get_damaged()
+        w.eat_mushroom()
         w.eat_mushroom()
         w.eat_mushroom()
         p.get_damaged()
